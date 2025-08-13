@@ -60,6 +60,7 @@ function DocumentEditor({ documentData, onDocumentChange, template }: DocumentEd
                 className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 required
               />
+              <p className="text-xs text-slate-500 mt-1">Judul akan muncul sebagai header dokumen</p>
             </div>
 
             <div>
@@ -92,9 +93,30 @@ function DocumentEditor({ documentData, onDocumentChange, template }: DocumentEd
                   }
                   className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />
+                <p className="text-xs text-slate-500 mt-1">
+                  {template.type === 'letter' 
+                    ? "Contoh: Bapak/Ibu Direktur PT. ABC"
+                    : "Contoh: Seluruh Tim Marketing"}
+                </p>
               </div>
             )}
 
+            {template.type === 'letter' && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <MessageSquare className="w-4 h-4 inline mr-1" />
+                  Perihal
+                </label>
+                <input
+                  type="text"
+                  value={documentData.subject || ''}
+                  onChange={(e) => handleFieldChange('subject', e.target.value)}
+                  placeholder="Perihal surat"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                />
+                <p className="text-xs text-slate-500 mt-1">Contoh: Undangan Rapat Koordinasi</p>
+              </div>
+            )}
             {/* Signature Section */}
             <div className="border-t pt-6">
               <h4 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
@@ -122,6 +144,7 @@ function DocumentEditor({ documentData, onDocumentChange, template }: DocumentEd
                     placeholder="Nama lengkap"
                     className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
+                  <p className="text-xs text-slate-500 mt-1">Contoh: Dr. John Doe, M.M.</p>
                 </div>
 
                 <div>
@@ -143,6 +166,7 @@ function DocumentEditor({ documentData, onDocumentChange, template }: DocumentEd
                     placeholder="Jabatan/posisi"
                     className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
+                  <p className="text-xs text-slate-500 mt-1">Contoh: Direktur Utama</p>
                 </div>
 
                 <div>
@@ -181,27 +205,13 @@ function DocumentEditor({ documentData, onDocumentChange, template }: DocumentEd
                       <div className="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center hover:border-slate-400 transition-colors">
                         <Upload className="w-6 h-6 text-slate-400 mx-auto mb-2" />
                         <p className="text-sm text-slate-600">Upload gambar tanda tangan</p>
+                        <p className="text-xs text-slate-500 mt-1">Format: JPG, PNG (Maks. 2MB)</p>
                       </div>
                     </div>
                   )}
                 </div>
               </div>
             </div>
-            {template.type === 'letter' && (
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  <MessageSquare className="w-4 h-4 inline mr-1" />
-                  Perihal
-                </label>
-                <input
-                  type="text"
-                  value={documentData.subject || ''}
-                  onChange={(e) => handleFieldChange('subject', e.target.value)}
-                  placeholder="Perihal surat"
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                />
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -228,6 +238,9 @@ function DocumentEditor({ documentData, onDocumentChange, template }: DocumentEd
 
             <div className="text-xs text-slate-500">
               {documentData.content.length} karakter
+              {documentData.content.length > 0 && (
+                <span className="ml-2">• {Math.ceil(documentData.content.length / 500)} paragraf</span>
+              )}
             </div>
           </div>
         </div>

@@ -1,7 +1,8 @@
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, FileText, X, CheckCircle } from 'lucide-react';
+import { Upload, FileText, X, CheckCircle, ChevronDown } from 'lucide-react';
 import { Letterhead } from '../App';
+import { fileToBase64, base64ToBlob } from '../utils/storage';
 
 interface LetterheadUploadProps {
   onLetterheadCreated: (letterhead: Letterhead) => void;
@@ -18,13 +19,18 @@ function LetterheadUpload({
 }: LetterheadUploadProps) {
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [showDropdown, setShowDropdown] = useState(false);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file && file.type === 'application/pdf') {
       setUploadedFile(file);
       setUploadProgress(0);
 
+      try {
+        // Convert file to base64 for storage
+        const base64Data = await fileToBase64(file);
+        
       // Simulate upload progress
       const interval = setInterval(() => {
         setUploadProgress(prev => {
@@ -36,7 +42,9 @@ function LetterheadUpload({
               id: Date.now().toString(),
               name: file.name.replace('.pdf', ''),
               type: 'uploaded',
-              pdfUrl: URL.createObjectURL(file),
+                pdfUrl: base64ToBlob(base64Data),
+                base64Data,
+                fileType: file.type,
             };
             onLetterheadCreated(newLetterhead);
             onLetterheadSelect(newLetterhead);
@@ -46,6 +54,11 @@ function LetterheadUpload({
           return prev + 10;
         });
       }, 200);
+      } catch (error) {
+        console.error('Error processing file:', error);
+        alert('Terjadi kesalahan saat memproses file');
+        setUploadProgress(null);
+      }
     }
   }, [onLetterheadCreated, onLetterheadSelect]);
 
@@ -65,6 +78,60 @@ function LetterheadUpload({
 
   return (
     <div className="space-y-6">
+      {/* Dropdown untuk memilih kop surat yang sudah ada */}
+      {existingLetterheads.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border p-6">
+          <h3 className="text-lg font-semibold text-slate-800 mb-4">Pilih Kop Surat Tersimpan</h3>
+          <div className="relative">
+            <button
+              onClick={() => setShowDropdown(!showDropdown)}
+              className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-left flex items-center justify-between hover:border-slate-400 transition-colors"
+            >
+              <span className="text-slate-700">
+                {selectedLetterhead ? selectedLetterhead.name : 'Pilih kop surat...'}
+              </span>
+              <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {showDropdown && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
+                <div
+                  onClick={() => {
+                    onLetterheadSelect(null);
+                    setShowDropdown(false);
+                  }}
+                  className="px-4 py-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100"
+                >
+                  <span className="text-slate-500 italic">Tidak menggunakan kop surat</span>
+                </div>
+                {existingLetterheads.map((letterhead) => (
+                  <div
+                    key={letterhead.id}
+                    onClick={() => {
+                      onLetterheadSelect(letterhead);
+                      setShowDropdown(false);
+                    }}
+                    className={`px-4 py-3 hover:bg-slate-50 cursor-pointer flex items-center gap-3 ${
+                      selectedLetterhead?.id === letterhead.id ? 'bg-blue-50 border-l-4 border-blue-500' : ''
+                    }`}
+                  >
+                    <div className="p-2 bg-red-100 rounded-lg">
+                      <FileText className="w-4 h-4 text-red-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-slate-800">{letterhead.name}</p>
+                      <p className="text-sm text-slate-500">PDF Upload</p>
+                    </div>
+                    {selectedLetterhead?.id === letterhead.id && (
+                      <CheckCircle className="w-4 h-4 text-blue-500 ml-auto" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {/* Upload Area */}
       <div
         {...getRootProps()}
@@ -128,35 +195,20 @@ function LetterheadUpload({
         )}
       </div>
 
-      {/* Existing Letterheads */}
-      {existingLetterheads.length > 0 && (
+      {/* Preview kop surat yang dipilih */}
+      {selectedLetterhead && (
         <div>
-          <h3 className="text-xl font-semibold text-slate-800 mb-4">Kop Surat Tersimpan</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {existingLetterheads.map((letterhead) => (
-              <div
-                key={letterhead.id}
-                onClick={() => onLetterheadSelect(letterhead)}
-                className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
-                  selectedLetterhead?.id === letterhead.id
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-red-100 rounded-lg">
-                    <FileText className="w-6 h-6 text-red-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-medium text-slate-800">{letterhead.name}</h4>
-                    <p className="text-sm text-slate-600">PDF Upload</p>
-                  </div>
-                  {selectedLetterhead?.id === letterhead.id && (
-                    <CheckCircle className="w-5 h-5 text-blue-500" />
-                  )}
-                </div>
+          <h3 className="text-lg font-semibold text-slate-800 mb-4">Kop Surat Terpilih</h3>
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="w-6 h-6 text-emerald-600" />
+              <div>
+                <h4 className="font-medium text-slate-800">{selectedLetterhead.name}</h4>
+                <p className="text-sm text-slate-600">
+                  {selectedLetterhead.type === 'uploaded' ? 'PDF Upload' : 'Manual'}
+                </p>
               </div>
-            ))}
+            </div>
           </div>
         </div>
       )}

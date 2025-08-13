@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Image as ImageIcon, X, CheckCircle, Building, Mail, Phone, Globe } from 'lucide-react';
+import { Upload, Image as ImageIcon, X, CheckCircle, Building, Mail, Phone, Globe, ChevronDown } from 'lucide-react';
 import { Letterhead } from '../App';
+import { fileToBase64, base64ToBlob } from '../utils/storage';
 
 interface LetterheadCreatorProps {
   onLetterheadCreated: (letterhead: Letterhead) => void;
@@ -25,6 +26,7 @@ function LetterheadCreator({
   });
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [showDropdown, setShowDropdown] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (field: string, value: string) => {
@@ -34,11 +36,17 @@ function LetterheadCreator({
     }));
   };
 
-  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
       setLogoFile(file);
-      setLogoPreview(URL.createObjectURL(file));
+      try {
+        const base64Data = await fileToBase64(file);
+        setLogoPreview(base64Data);
+      } catch (error) {
+        console.error('Error processing logo:', error);
+        setLogoPreview(URL.createObjectURL(file));
+      }
     }
   };
 
@@ -50,7 +58,7 @@ function LetterheadCreator({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.companyName) {
       const newLetterhead: Letterhead = {
@@ -63,9 +71,22 @@ function LetterheadCreator({
         email: formData.email,
         website: formData.website,
         logoUrl: logoPreview || undefined,
+        logoBase64: logoPreview || undefined,
       };
       onLetterheadCreated(newLetterhead);
       onLetterheadSelect(newLetterhead);
+      
+      // Reset form
+      setFormData({
+        name: '',
+        companyName: '',
+        address: '',
+        phone: '',
+        email: '',
+        website: '',
+      });
+      setLogoFile(null);
+      setLogoPreview(null);
     }
   };
 
@@ -73,6 +94,60 @@ function LetterheadCreator({
 
   return (
     <div className="space-y-6">
+      {/* Dropdown untuk memilih kop surat manual yang sudah ada */}
+      {existingLetterheads.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border p-6">
+          <h3 className="text-lg font-semibold text-slate-800 mb-4">Pilih Kop Surat Manual Tersimpan</h3>
+          <div className="relative">
+            <button
+              onClick={() => setShowDropdown(!showDropdown)}
+              className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-left flex items-center justify-between hover:border-slate-400 transition-colors"
+            >
+              <span className="text-slate-700">
+                {selectedLetterhead ? selectedLetterhead.companyName : 'Pilih kop surat manual...'}
+              </span>
+              <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {showDropdown && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
+                <div
+                  onClick={() => {
+                    onLetterheadSelect(null);
+                    setShowDropdown(false);
+                  }}
+                  className="px-4 py-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100"
+                >
+                  <span className="text-slate-500 italic">Tidak menggunakan kop surat</span>
+                </div>
+                {existingLetterheads.map((letterhead) => (
+                  <div
+                    key={letterhead.id}
+                    onClick={() => {
+                      onLetterheadSelect(letterhead);
+                      setShowDropdown(false);
+                    }}
+                    className={`px-4 py-3 hover:bg-slate-50 cursor-pointer flex items-center gap-3 ${
+                      selectedLetterhead?.id === letterhead.id ? 'bg-blue-50 border-l-4 border-blue-500' : ''
+                    }`}
+                  >
+                    <div className="p-2 bg-emerald-100 rounded-lg">
+                      <Building className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-slate-800">{letterhead.companyName}</p>
+                      <p className="text-sm text-slate-500">Manual</p>
+                    </div>
+                    {selectedLetterhead?.id === letterhead.id && (
+                      <CheckCircle className="w-4 h-4 text-blue-500 ml-auto" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {/* Creator Form */}
       <div className="bg-white rounded-xl shadow-sm border p-6">
         <h3 className="text-xl font-semibold text-slate-800 mb-6">Buat Kop Surat Manual</h3>
@@ -127,6 +202,7 @@ function LetterheadCreator({
                 placeholder="Contoh: Kop Resmi Perusahaan"
                 className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               />
+              <p className="text-xs text-slate-500 mt-1">Nama untuk mengidentifikasi template kop surat ini</p>
             </div>
 
             <div>
@@ -243,35 +319,18 @@ function LetterheadCreator({
         </div>
       )}
 
-      {/* Existing Manual Letterheads */}
-      {existingLetterheads.length > 0 && (
+      {/* Preview kop surat yang dipilih */}
+      {selectedLetterhead && (
         <div>
-          <h3 className="text-xl font-semibold text-slate-800 mb-4">Kop Surat Manual Tersimpan</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {existingLetterheads.map((letterhead) => (
-              <div
-                key={letterhead.id}
-                onClick={() => onLetterheadSelect(letterhead)}
-                className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
-                  selectedLetterhead?.id === letterhead.id
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-emerald-100 rounded-lg">
-                    <Building className="w-6 h-6 text-emerald-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-medium text-slate-800">{letterhead.companyName}</h4>
-                    <p className="text-sm text-slate-600">Manual</p>
-                  </div>
-                  {selectedLetterhead?.id === letterhead.id && (
-                    <CheckCircle className="w-5 h-5 text-blue-500" />
-                  )}
-                </div>
+          <h3 className="text-lg font-semibold text-slate-800 mb-4">Kop Surat Terpilih</h3>
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="w-6 h-6 text-emerald-600" />
+              <div>
+                <h4 className="font-medium text-slate-800">{selectedLetterhead.companyName}</h4>
+                <p className="text-sm text-slate-600">Manual</p>
               </div>
-            ))}
+            </div>
           </div>
         </div>
       )}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FileText, Upload, Edit3, Eye, Download, Settings } from 'lucide-react';
+import { getUserData, saveUserData, getUserId } from './utils/storage';
 import Header from './components/Header';
 import LetterheadUpload from './components/LetterheadUpload';
 import LetterheadCreator from './components/LetterheadCreator';
@@ -14,12 +15,15 @@ export interface Letterhead {
   type: 'uploaded' | 'manual';
   imageUrl?: string;
   pdfUrl?: string;
+  base64Data?: string;
+  fileType?: string;
   companyName?: string;
   address?: string;
   phone?: string;
   email?: string;
   website?: string;
   logoUrl?: string;
+  logoBase64?: string;
 }
 
 export interface DocumentTemplate {
@@ -67,30 +71,22 @@ function App() {
 
   const [letterheads, setLetterheads] = useState<Letterhead[]>([]);
   const [savedDocuments, setSavedDocuments] = useState<SavedDocument[]>([]);
+  const [userId] = useState<string>(getUserId());
 
   // Load saved data from localStorage on component mount
   React.useEffect(() => {
-    const savedLetterheads = localStorage.getItem('letterheads');
-    const savedDocs = localStorage.getItem('savedDocuments');
-    
-    if (savedLetterheads) {
-      setLetterheads(JSON.parse(savedLetterheads));
-    }
-    
-    if (savedDocs) {
-      setSavedDocuments(JSON.parse(savedDocs));
-    }
+    const userData = getUserData();
+    setLetterheads(userData.letterheads);
+    setSavedDocuments(userData.savedDocuments);
   }, []);
 
-  // Save letterheads to localStorage whenever they change
+  // Save data to localStorage whenever they change
   React.useEffect(() => {
-    localStorage.setItem('letterheads', JSON.stringify(letterheads));
-  }, [letterheads]);
-
-  // Save documents to localStorage whenever they change
-  React.useEffect(() => {
-    localStorage.setItem('savedDocuments', JSON.stringify(savedDocuments));
-  }, [savedDocuments]);
+    const userData = getUserData();
+    userData.letterheads = letterheads;
+    userData.savedDocuments = savedDocuments;
+    saveUserData(userData);
+  }, [letterheads, savedDocuments]);
 
   const handleLetterheadCreated = (letterhead: Letterhead) => {
     setLetterheads([...letterheads, letterhead]);
