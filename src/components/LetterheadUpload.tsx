@@ -31,34 +31,36 @@ function LetterheadUpload({
         // Convert file to base64 for storage
         const base64Data = await fileToBase64(file);
         
-      // Simulate upload progress
-      const interval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev === null) return 0;
-          if (prev >= 100) {
-            clearInterval(interval);
-            // Create letterhead object
-            const newLetterhead: Letterhead = {
-              id: Date.now().toString(),
-              name: file.name.replace('.pdf', ''),
-              type: 'uploaded',
+        // Simulate upload progress
+        const interval = setInterval(() => {
+          setUploadProgress(prev => {
+            if (prev === null) return 0;
+            if (prev >= 100) {
+              clearInterval(interval);
+              // Create letterhead object
+              const newLetterhead: Letterhead = {
+                id: Date.now().toString(),
+                name: file.name.replace('.pdf', ''),
+                type: 'uploaded',
                 pdfUrl: base64ToBlob(base64Data),
                 base64Data,
                 fileType: file.type,
-            };
-            onLetterheadCreated(newLetterhead);
-            onLetterheadSelect(newLetterhead);
-            setUploadProgress(null);
-            return 100;
-          }
-          return prev + 10;
-        });
-      }, 200);
+              };
+              onLetterheadCreated(newLetterhead);
+              onLetterheadSelect(newLetterhead);
+              setUploadProgress(null);
+              return 100;
+            }
+            return prev + 10;
+          });
+        }, 200);
       } catch (error) {
         console.error('Error processing file:', error);
         alert('Terjadi kesalahan saat memproses file');
         setUploadProgress(null);
       }
+    } else {
+      alert('Silakan upload file PDF saja');
     }
   }, [onLetterheadCreated, onLetterheadSelect]);
 

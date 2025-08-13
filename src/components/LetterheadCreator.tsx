@@ -61,6 +61,17 @@ function LetterheadCreator({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.companyName) {
+      let logoBase64 = logoPreview;
+      
+      // If we have a logo file, convert it to base64
+      if (logoFile && !logoPreview?.startsWith('data:')) {
+        try {
+          logoBase64 = await fileToBase64(logoFile);
+        } catch (error) {
+          console.error('Error converting logo to base64:', error);
+        }
+      }
+      
       const newLetterhead: Letterhead = {
         id: Date.now().toString(),
         name: formData.name || formData.companyName,
@@ -70,8 +81,8 @@ function LetterheadCreator({
         phone: formData.phone,
         email: formData.email,
         website: formData.website,
-        logoUrl: logoPreview || undefined,
-        logoBase64: logoPreview || undefined,
+        logoUrl: logoBase64 || undefined,
+        logoBase64: logoBase64 || undefined,
       };
       onLetterheadCreated(newLetterhead);
       onLetterheadSelect(newLetterhead);

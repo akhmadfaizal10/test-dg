@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FileText, Upload, Edit3, Eye, Download, Settings } from 'lucide-react';
-import { getUserData, saveUserData, getUserId } from './utils/storage';
+import { getUserData, saveUserData, getUserId, getLetterheads, saveLetterhead, getSavedDocuments, saveDocument, deleteDocument } from './utils/storage';
 import Header from './components/Header';
 import LetterheadUpload from './components/LetterheadUpload';
 import LetterheadCreator from './components/LetterheadCreator';
@@ -75,21 +75,16 @@ function App() {
 
   // Load saved data from localStorage on component mount
   React.useEffect(() => {
-    const userData = getUserData();
-    setLetterheads(userData.letterheads);
-    setSavedDocuments(userData.savedDocuments);
+    const loadedLetterheads = getLetterheads();
+    const loadedDocuments = getSavedDocuments();
+    setLetterheads(loadedLetterheads);
+    setSavedDocuments(loadedDocuments);
   }, []);
 
-  // Save data to localStorage whenever they change
-  React.useEffect(() => {
-    const userData = getUserData();
-    userData.letterheads = letterheads;
-    userData.savedDocuments = savedDocuments;
-    saveUserData(userData);
-  }, [letterheads, savedDocuments]);
-
   const handleLetterheadCreated = (letterhead: Letterhead) => {
-    setLetterheads([...letterheads, letterhead]);
+    saveLetterhead(letterhead);
+    const updatedLetterheads = getLetterheads();
+    setLetterheads(updatedLetterheads);
     setSelectedLetterhead(letterhead);
   };
 
@@ -107,7 +102,9 @@ function App() {
       updatedAt: new Date().toISOString(),
     };
     
-    setSavedDocuments([...savedDocuments, savedDoc]);
+    saveDocument(savedDoc);
+    const updatedDocuments = getSavedDocuments();
+    setSavedDocuments(updatedDocuments);
     alert('Dokumen berhasil disimpan!');
   };
 
@@ -119,7 +116,9 @@ function App() {
   };
 
   const handleDeleteDocument = (id: string) => {
-    setSavedDocuments(savedDocuments.filter(doc => doc.id !== id));
+    deleteDocument(id);
+    const updatedDocuments = getSavedDocuments();
+    setSavedDocuments(updatedDocuments);
   };
 
   const handleNext = () => {

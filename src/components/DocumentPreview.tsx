@@ -72,18 +72,30 @@ const handleDownloadPDF = async () => {
     if (documentData.letterhead.type === 'uploaded') {
       return (
         <div className="mb-8 pb-6 border-b-2 border-slate-300">
-          <div className="text-center text-sm text-slate-600 italic">
-            [Kop Surat PDF akan ditampilkan di sini]
-          </div>
+          {documentData.letterhead.base64Data ? (
+            <div className="text-center">
+              <embed
+                src={documentData.letterhead.base64Data}
+                type="application/pdf"
+                width="100%"
+                height="200px"
+                className="border border-slate-200 rounded"
+              />
+            </div>
+          ) : (
+            <div className="text-center text-sm text-slate-600 italic">
+              [Kop Surat PDF: {documentData.letterhead.name}]
+            </div>
+          )}
         </div>
       );
     } else {
       return (
         <div className="mb-8 pb-6 border-b-2 border-slate-300">
           <div className="flex flex-col items-center gap-4 mb-6">
-            {documentData.letterhead.logoUrl && (
+            {documentData.letterhead.logoBase64 && (
               <img
-                src={documentData.letterhead.logoUrl}
+                src={documentData.letterhead.logoBase64}
                 alt="Logo"
                 className="w-20 h-20 object-contain"
               />

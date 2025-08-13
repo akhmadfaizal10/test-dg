@@ -1,6 +1,7 @@
 import React from 'react';
 import { Calendar, User, FileText, MessageSquare, PenTool, Upload } from 'lucide-react';
 import { DocumentData, DocumentTemplate } from '../App';
+import { getUserId } from '../utils/storage';
 
 interface DocumentEditorProps {
   documentData: DocumentData;
@@ -9,6 +10,19 @@ interface DocumentEditorProps {
 }
 
 function DocumentEditor({ documentData, onDocumentChange, template }: DocumentEditorProps) {
+  // Auto-save functionality
+  React.useEffect(() => {
+    const autoSaveTimer = setTimeout(() => {
+      if (documentData.title || documentData.content) {
+        // Auto-save to localStorage as draft
+        const draftKey = `draft_${getUserId()}_${Date.now()}`;
+        localStorage.setItem(draftKey, JSON.stringify(documentData));
+      }
+    }, 5000); // Auto-save every 5 seconds
+
+    return () => clearTimeout(autoSaveTimer);
+  }, [documentData]);
+
   const handleFieldChange = (field: keyof DocumentData, value: string) => {
     onDocumentChange({
       ...documentData,

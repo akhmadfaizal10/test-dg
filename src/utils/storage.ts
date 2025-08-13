@@ -31,7 +31,11 @@ export const getUserData = (): UserData => {
   const userData = localStorage.getItem(`userData_${userId}`);
   
   if (userData) {
-    return JSON.parse(userData);
+    try {
+      return JSON.parse(userData);
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+    }
   }
   
   return {
@@ -45,7 +49,11 @@ export const getUserData = (): UserData => {
 // Save user data
 export const saveUserData = (data: UserData): void => {
   const userId = getUserId();
-  localStorage.setItem(`userData_${userId}`, JSON.stringify(data));
+  try {
+    localStorage.setItem(`userData_${userId}`, JSON.stringify(data));
+  } catch (error) {
+    console.error('Error saving user data:', error);
+  }
 };
 
 // Convert file to base64 for storage
@@ -73,4 +81,51 @@ export const base64ToBlob = (base64: string): string => {
     console.error('Error converting base64 to blob:', error);
     return base64;
   }
+};
+
+// Save letterhead to storage
+export const saveLetterhead = (letterhead: any): void => {
+  const userData = getUserData();
+  const existingIndex = userData.letterheads.findIndex(l => l.id === letterhead.id);
+  
+  if (existingIndex >= 0) {
+    userData.letterheads[existingIndex] = letterhead;
+  } else {
+    userData.letterheads.push(letterhead);
+  }
+  
+  saveUserData(userData);
+};
+
+// Get all letterheads
+export const getLetterheads = (): any[] => {
+  const userData = getUserData();
+  return userData.letterheads || [];
+};
+
+// Save document
+export const saveDocument = (document: any): void => {
+  const userData = getUserData();
+  const existingIndex = userData.savedDocuments.findIndex(d => d.id === document.id);
+  
+  if (existingIndex >= 0) {
+    userData.savedDocuments[existingIndex] = document;
+  } else {
+    userData.savedDocuments.push(document);
+  }
+  
+  saveUserData(userData);
+};
+
+// Get all saved documents
+export const getSavedDocuments = (): any[] => {
+  const userData = getUserData();
+  return userData.savedDocuments || [];
+};
+
+// Delete document
+export const deleteDocument = (documentId: string): void => {
+  const userData = getUserData();
+  userData.savedDocuments = userData.savedDocuments.filter(d => d.id !== documentId);
+  saveUserData(userData);
 };
