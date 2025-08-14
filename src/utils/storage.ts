@@ -129,3 +129,10 @@ export const deleteDocument = (documentId: string): void => {
   userData.savedDocuments = userData.savedDocuments.filter(d => d.id !== documentId);
   saveUserData(userData);
 };
+
+// Delete letterhead
+export const deleteLetterhead = (letterheadId: string): void => {
+  const userData = getUserData();
+  userData.letterheads = userData.letterheads.filter(l => l.id !== letterheadId);
+  saveUserData(userData);
+};

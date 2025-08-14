@@ -17,6 +17,7 @@ export interface Letterhead {
   pdfUrl?: string;
   base64Data?: string;
   fileType?: string;
+  imageUrl?: string; // For cropped letterhead images
   companyName?: string;
   address?: string;
   phone?: string;

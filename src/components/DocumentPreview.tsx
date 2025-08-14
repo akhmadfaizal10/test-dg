@@ -72,7 +72,16 @@ const handleDownloadPDF = async () => {
     if (documentData.letterhead.type === 'uploaded') {
       return (
         <div className="mb-8 pb-6 border-b-2 border-slate-300">
-          {documentData.letterhead.base64Data ? (
+          {documentData.letterhead.imageUrl ? (
+            <div className="text-center">
+              <img
+                src={documentData.letterhead.imageUrl}
+                alt="Letterhead"
+                className="max-w-full h-auto mx-auto"
+                style={{ maxHeight: '200px' }}
+              />
+            </div>
+          ) : documentData.letterhead.base64Data ? (
             <div className="text-center">
               <embed
                 src={documentData.letterhead.base64Data}

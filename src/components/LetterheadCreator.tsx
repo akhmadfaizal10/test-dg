@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Image as ImageIcon, X, CheckCircle, Building, Mail, Phone, Globe, ChevronDown } from 'lucide-react';
+import { Upload, Image as ImageIcon, X, CheckCircle, Building, Mail, Phone, Globe, ChevronDown, Trash2 } from 'lucide-react';
 import { Letterhead } from '../App';
-import { fileToBase64, base64ToBlob } from '../utils/storage';
+import { fileToBase64, base64ToBlob, deleteLetterhead } from '../utils/storage';
 
 interface LetterheadCreatorProps {
   onLetterheadCreated: (letterhead: Letterhead) => void;
@@ -101,6 +101,15 @@ function LetterheadCreator({
     }
   };
 
+  const handleDeleteLetterhead = (letterheadId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (confirm('Yakin ingin menghapus kop surat ini?')) {
+      deleteLetterhead(letterheadId);
+      // Update the existing letterheads list by calling parent component
+      window.location.reload(); // Simple refresh - in production you'd use proper state management
+    }
+  };
+
   const isFormValid = formData.companyName.trim() !== '';
 
   return (
@@ -134,24 +143,37 @@ function LetterheadCreator({
                 {existingLetterheads.map((letterhead) => (
                   <div
                     key={letterhead.id}
-                    onClick={() => {
-                      onLetterheadSelect(letterhead);
-                      setShowDropdown(false);
-                    }}
-                    className={`px-4 py-3 hover:bg-slate-50 cursor-pointer flex items-center gap-3 ${
+                    className={`px-4 py-3 hover:bg-slate-50 cursor-pointer flex items-center gap-3 group ${
                       selectedLetterhead?.id === letterhead.id ? 'bg-blue-50 border-l-4 border-blue-500' : ''
                     }`}
                   >
-                    <div className="p-2 bg-emerald-100 rounded-lg">
-                      <Building className="w-4 h-4 text-emerald-600" />
+                    <div 
+                      className="flex items-center gap-3 flex-1"
+                      onClick={() => {
+                        onLetterheadSelect(letterhead);
+                        setShowDropdown(false);
+                      }}
+                    >
+                      <div className="p-2 bg-emerald-100 rounded-lg">
+                        <Building className="w-4 h-4 text-emerald-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-800">{letterhead.companyName}</p>
+                        <p className="text-sm text-slate-500">Manual</p>
+                      </div>
+                      {selectedLetterhead?.id === letterhead.id && (
+                        <CheckCircle className="w-4 h-4 text-blue-500" />
+                      )}
                     </div>
-                    <div>
-                      <p className="font-medium text-slate-800">{letterhead.companyName}</p>
-                      <p className="text-sm text-slate-500">Manual</p>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={(e) => handleDeleteLetterhead(letterhead.id, e)}
+                        className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                        title="Hapus kop surat"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
                     </div>
-                    {selectedLetterhead?.id === letterhead.id && (
-                      <CheckCircle className="w-4 h-4 text-blue-500 ml-auto" />
-                    )}
                   </div>
                 ))}
               </div>
@@ -335,12 +357,21 @@ function LetterheadCreator({
         <div>
           <h3 className="text-lg font-semibold text-slate-800 mb-4">Kop Surat Terpilih</h3>
           <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-            <div className="flex items-center gap-3">
-              <CheckCircle className="w-6 h-6 text-emerald-600" />
-              <div>
-                <h4 className="font-medium text-slate-800">{selectedLetterhead.companyName}</h4>
-                <p className="text-sm text-slate-600">Manual</p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <CheckCircle className="w-6 h-6 text-emerald-600" />
+                <div>
+                  <h4 className="font-medium text-slate-800">{selectedLetterhead.companyName}</h4>
+                  <p className="text-sm text-slate-600">Manual</p>
+                </div>
               </div>
+              {selectedLetterhead.logoBase64 && (
+                <img
+                  src={selectedLetterhead.logoBase64}
+                  alt="Logo preview"
+                  className="w-12 h-12 object-contain border border-slate-200 rounded bg-white"
+                />
+              )}
             </div>
           </div>
         </div>
